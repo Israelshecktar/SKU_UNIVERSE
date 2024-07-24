@@ -1,10 +1,9 @@
 from flask import Flask
-from config import SQLALCHEMY_DATABASE_URI, SECRET_KEY
-from models import db, Brand, Category, Subcategory, SKU
+from models import db, add_initial_data
+from config import Config
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
-app.config['SECRET_KEY'] = SECRET_KEY
+app.config.from_object(Config)
 
 db.init_app(app)
 
@@ -15,4 +14,5 @@ def welcome():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()  # Create tables
+        add_initial_data()  # Add initial data
     app.run(debug=True)
