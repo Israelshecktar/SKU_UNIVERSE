@@ -1,40 +1,53 @@
 import pandas as pd
-from sqlalchemy import create_engine
-from models import db, SKU
-from config import Config
+from models import db, SKU, Brand, Category
+from app import app
 
-# Load the Excel file into a pandas DataFrame
-df = pd.read_excel('SKU Pricing.xlsx')
+def load_data_from_excel(file_path):
+    # Load the Excel file
+    df = pd.read_excel(file_path)
+    
+    # Replace 'KOMOBEL' and 'NECOL' with 'DULUX' in the 'Brand' column
+    df['Brand'] = df['Brand'].replace(['KOMOBEL', 'NECOL'], 'DULUX')
+    
+    # Replace 'PROJECTS' with 'Project' in the 'Brand' column
+    df['Brand'] = df['Brand'].replace('PROJECTS', 'Project')
+    
+    # Drop rows with NaN in 'Brand' and 'Product Line' columns
+    df = df.dropna(subset=['Brand', 'Product Line'])
 
-# Rename the columns to match the SKU table in the database
-df.rename(columns={
-    'Column1': 'sku_id',
-    'Column2': 'material',
-    'Column3': 'Material Description',
-    'Column4': 'unit',
-    'Column5': 'Brand',
-    'Column6': 'product line',
-    'Column7': 'category'
-}, inplace=True)
+    # Ensure 'Material' column is treated as an integer
+    df['Material'] = df['Material'].astype(int)
 
-# Drop the 'amount' column as it's not needed
-df.drop('amount', axis=1, inplace=True)
+    with app.app_context():
+        for index, row in df.iterrows():
+            # Check if 'Brand' value is a string to avoid 'nan' values
+            if isinstance(row['Brand'], str):
+                brand = Brand.query.filter_by(name=row['Brand']).first()
+                if not brand:
+                    print(f"Brand {row['Brand']} not found in the database.")
+                    continue
 
-# Create a SQLAlchemy engine
-engine = create_engine(Config.SQLALCHEMY_DATABASE_URI)
+                # Use 'Product Line' as category
+                product_line = row['Product Line']
+                category = Category.query.filter_by(name=product_line, brand_id=brand.id).first()
+                if not category:
+                    category = Category(name=product_line, brand_id=brand.id)
+                    db.session.add(category)
+                    db.session.commit()
 
-# Connect to the database
-with engine.connect() as connection:
-    # Begin a transaction
-    with connection.begin() as transaction:
-        try:
-            # Insert the data into the SKU table
-            df.to_sql('skus', con=connection, if_exists='append', index=False)
-            
-            # Commit the transaction
-            transaction.commit()
-            print("Data loaded successfully into the SKU table.")
-        except Exception as e:
-            # Rollback the transaction in case of error
-            transaction.rollback()
-            print(f"An error occurred: {e}")
+                # Create SKU with 'Product Line' as per user request
+                sku = SKU(
+                    material=row['Material'],
+                    material_description=row['Material Description'],
+                    uom=row['UoM'],
+                    brand_id=brand.id,
+                    category_id=category.id,
+                    product_line=product_line  # Add product line to SKU
+                )
+                db.session.add(sku)
+            else:
+                print(f"Invalid brand value: {row['Brand']} at row {index + 2}")
+        db.session.commit()
+
+if __name__ == '__main__':
+    load_data_from_excel('SKU Pricing.xlsx')

@@ -24,33 +24,20 @@ class Subcategory(db.Model):
 class SKU(db.Model):
     __tablename__ = 'skus'
     id = db.Column(db.Integer, primary_key=True)
-    material = db.Column(db.String(255), nullable=False)
+    material = db.Column(db.Integer, nullable=False)  # Ensure material is an integer
     material_description = db.Column(db.String(255))
-    amount = db.Column(db.Numeric(10, 2))
-    unit = db.Column(db.String(10))
-    per_unit = db.Column(db.String(10))
     uom = db.Column(db.String(10))
-    valid_from = db.Column(db.Date)
-    valid_to = db.Column(db.Date)
     brand_id = db.Column(db.Integer, db.ForeignKey('brands.id'))
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'))
-    subcategory_id = db.Column(db.Integer, db.ForeignKey('subcategories.id'))
+    product_line = db.Column(db.String(255))  # Add product line to SKU
 
 def add_initial_data():
     brands = {
-        'DULUX': [
-            'water-based', 'solvent-based', 'Industrials'
-        ],
-        'SANDTEX': [
-            'water-based', 'solvent-based'
-        ],
-        'CAPLUX': [
-            'water-based', 'solvent-based', 'CAPLUX specials'
-        ],
+        'DULUX': ['water-based', 'solvent-based', 'Industrials'],
+        'SANDTEX': ['water-based', 'solvent-based'],
+        'CAPLUX': ['water-based', 'solvent-based', 'CAPLUX specials'],
         'Hempel': [],
-        'Project': [
-            'water-based', 'solvent-based', 'Industrials'
-        ]
+        'Project': ['water-based', 'solvent-based', 'Industrials']
     }
 
     for brand_name, categories in brands.items():
@@ -66,7 +53,3 @@ def add_initial_data():
                 category = Category(name=category_name, brand_id=brand.id)
                 db.session.add(category)
                 db.session.commit()
-
-if __name__ == '__main__':
-    db.create_all()
-    add_initial_data()
