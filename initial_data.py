@@ -1,5 +1,6 @@
 from models import db, Brand, Category
 
+
 def add_initial_data():
     brands = {
         "DULUX": ["water-based", "solvent-based", "Industrials"],
@@ -17,7 +18,9 @@ def add_initial_data():
             db.session.commit()
 
         for category_name in categories:
-            category = Category.query.filter_by(name=category_name, brand_id=brand.id).first()
+            category = Category.query.filter_by(
+                name=category_name, brand_id=brand.id
+            ).first()
             if not category:
                 category = Category(name=category_name, brand_id=brand.id)
                 db.session.add(category)
