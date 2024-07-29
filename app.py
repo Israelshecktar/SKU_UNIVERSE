@@ -252,4 +252,4 @@ if __name__ == "__main__":
     with app.app_context():
         db.create_all()  # Create tables if they don't exist
         add_initial_data()  # Add initial data
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0")
