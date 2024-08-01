@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SKU List</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #fff;
+            background-color: #007bff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        #total-skus {
+            text-align: center;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        #sku-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .sku-item {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin: 10px;
+            padding: 20px;
+            width: 300px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .sku-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .sku-item p {
+            margin: 5px 0;
+        }
+        .sku-item p strong {
+            color: #007bff;
+        }
+        #pagination-controls {
+            text-align: center;
+            margin-top: 20px;
+        }
+        #pagination-controls button {
+            background-color: #007bff;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+            padding: 10px 20px;
+            margin: 0 5px;
+            transition: background-color 0.2s, transform 0.2s;
+        }
+        #pagination-controls button:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
+        }
+        #pagination-controls button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        #page-info {
+            display: inline-block;
+            margin: 0 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>SKU List</h1>
+    <div id="total-skus"></div>
+    <div id="sku-container"></div>
+    <div id="pagination-controls">
+        <button id="prev-page" onclick="changePage(-1)">Previous</button>
+        <span id="page-info"></span>
+        <button id="next-page" onclick="changePage(1)">Next</button>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        const perPage = 10;
+
+        async function fetchSKUs(page = 1) {
+            try {
+                const response = await fetch(`http://localhost:5000/api/skus?page=${page}&per_page=${perPage}`);
+                const data = await response.json();
+                displaySKUs(data.skus);
+                updatePaginationControls(data);
+                updateTotalSKUs(data.total);
+            } catch (error) {
+                console.error('Error fetching SKUs:', error);
+            }
+        }
+
+        function displaySKUs(skus) {
+            const container = document.getElementById('sku-container');
+            container.innerHTML = ''; // Clear previous SKUs
+            skus.forEach(sku => {
+                const skuElement = document.createElement('div');
+                skuElement.className = 'sku-item';
+                skuElement.innerHTML = `
+                    <p><strong>Material:</strong> ${sku.material}</p>
+                    <p><strong>Description:</strong> ${sku.material_description}</p>
+                    <p><strong>UOM:</strong> ${sku.uom}</p>
+                    <p><strong>Brand:</strong> ${sku.brand}</p>
+                    <p><strong>Category:</strong> ${sku.category}</p>
+                    <p><strong>Subcategory:</strong> ${sku.subcategory}</p>
+                    <p><strong>Product Line:</strong> ${sku.product_line}</p>
+                `;
+                container.appendChild(skuElement);
+            });
+        }
+
+        function updatePaginationControls(data) {
+            const pageInfo = document.getElementById('page-info');
+            pageInfo.textContent = `Page ${data.current_page} of ${data.pages}`;
+
+            const prevButton = document.getElementById('prev-page');
+            const nextButton = document.getElementById('next-page');
+
+            prevButton.disabled = data.current_page === 1;
+            nextButton.disabled = data.current_page === data.pages;
+        }
+
+        function updateTotalSKUs(total) {
+            const totalSKUs = document.getElementById('total-skus');
+            totalSKUs.textContent = `Total SKUs: ${total}`;
+        }
+
+        function changePage(direction) {
+            currentPage += direction;
+            fetchSKUs(currentPage);
+        }
+
+        fetchSKUs();
+    </script>
+</body>
+</html>

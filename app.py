@@ -4,9 +4,12 @@ from config import Config
 from flask_migrate import Migrate
 from initial_data import add_initial_data
 import logging
+from flask_cors import CORS
+
 
 app = Flask(__name__)
 app.config.from_object(Config)
+CORS(app)
 
 db.init_app(app)
 migrate = Migrate(app, db)
